@@ -1,3 +1,4 @@
+import 'package:example_awesome_notification/navigation_page.dart';
 import 'package:flutter/material.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
 
@@ -32,6 +33,9 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.teal)
               .copyWith(secondary: Colors.tealAccent)),
       home: const HomePage(),
+      routes: {
+        NavigationPage.route : (context) => const NavigationPage(),
+      },
     );
   }
 }
@@ -59,6 +63,10 @@ class _HomePageState extends State<HomePage> {
   }
 
   void notify() async {
+
+    // String timeZone = await AwesomeNotifications().getLocalTimeZoneIdentifier();
+    // print("HHHHH==> timeZone: $timeZone");
+
     await AwesomeNotifications().createNotification(
         content: NotificationContent(
             id: 1,
@@ -67,9 +75,11 @@ class _HomePageState extends State<HomePage> {
           body: 'This is body of notification',
           bigPicture: 'https://cdn.tutsplus.com/gamedev/uploads/legacy/043_freeShmupSprites/Free_Shmup_Sprites_Boss_Battle.jpg',
           notificationLayout: NotificationLayout.BigPicture,
-
         ),
+      //schedule: NotificationInterval(interval: 5, timeZone: timeZone, repeats: true),
     );
+    AwesomeNotifications().actionStream.listen((receivedNotification) {
+      Navigator.of(context).pushNamed(NavigationPage.route);
+    });
   }
-
 }
