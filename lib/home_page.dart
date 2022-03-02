@@ -18,7 +18,11 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    handleNotificationPermission();
+    firebaseNotificationSettings();
+  }
 
+  void handleNotificationPermission() {
     AwesomeNotifications().isNotificationAllowed().then((isAllowed) {
       if (!isAllowed) {
         showDialog(
@@ -50,19 +54,15 @@ class _HomePageState extends State<HomePage> {
     FirebaseMessaging.instance.getToken().then((token) {
       print('My Firebase Token: $token');
     });
-    firebaseNotificationSettings();
-
   }
 
-  firebaseNotificationSettings() {
-
-
+  void firebaseNotificationSettings() {
     ///Gives you the message on which user taps and it opened the app from terminated state
     FirebaseMessaging.instance.getInitialMessage().then((message) {
       if (message != null) {
         //final Map<String, dynamic> myData = message.data;
         //_firebaseMessagingBackgroundHandler(message);
-        //notify2(message, "instance");
+        //notifyFCM(message, "instance");
       }
     });
 
@@ -72,9 +72,8 @@ class _HomePageState extends State<HomePage> {
         print(message.notification!.body ?? "");
         print(message.notification!.title ?? "");
         //_firebaseMessagingBackgroundHandler(message);
-        notify2(message, "onMessage");
+        notifyFCM(message, "onMessage");
       }
-
     });
 
     ///Background  but app is open state: user taps on notification
@@ -82,8 +81,13 @@ class _HomePageState extends State<HomePage> {
       //final String link = message.data['link'];
       //final Map<String, dynamic> myData = message.data;
       //_firebaseMessagingBackgroundHandler(message);
-      notify2(message, "onMessageOpenedApp");
+      // notifyFCM(message, "onMessageOpenedApp");
     });
+
+    AwesomeNotifications().actionStream.listen((receivedNotification) {
+      _navigateToScreen(receivedNotification.payload);
+    });
+
   }
 
   @override
@@ -92,7 +96,7 @@ class _HomePageState extends State<HomePage> {
       body: Center(
         child: ElevatedButton(
           onPressed: () {
-            notify();
+            notifyLocal();
           },
           child: const Icon(Icons.circle_notifications),
         ),
@@ -100,7 +104,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void notify() async {
+  void notifyLocal() async {
 
     // String timeZone = await AwesomeNotifications().getLocalTimeZoneIdentifier();
     // print("HHHHH==> timeZone: $timeZone");
@@ -113,21 +117,30 @@ class _HomePageState extends State<HomePage> {
         body: 'This is body of notification',
         bigPicture: 'https://cdn.tutsplus.com/gamedev/uploads/legacy/043_freeShmupSprites/Free_Shmup_Sprites_Boss_Battle.jpg',
         notificationLayout: NotificationLayout.BigPicture,
+        payload: {
+          'aaa': 'bbb',
+          '111': '222',
+        },
       ),
       //schedule: NotificationInterval(interval: 5, timeZone: timeZone, repeats: true),
     );
-    AwesomeNotifications().actionStream.listen((receivedNotification) {
-      Navigator.of(context).pushNamed(NavigationPage.route);
-    });
   }
 
 
-  void notify2(RemoteMessage message, String from) async {
-    print("HHHHH ==> FROM: $from");
+  void notifyFCM(RemoteMessage message, String from) async {
+    //print("HHHHH ==> FROM: $from");
     String defaultImageLink = 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Image_created_with_a_mobile_phone.png/2560px-Image_created_with_a_mobile_phone.png';
     // String timeZone = await AwesomeNotifications().getLocalTimeZoneIdentifier();
     // print("HHHHH==> timeZone: $timeZone");
     //https://cdn.tutsplus.com/gamedev/uploads/legacy/043_freeShmupSprites/Free_Shmup_Sprites_Boss_Battle.jpg
+
+    // Map<String, String> payloadFromData = message.data as Map<String, String>;
+
+
+    Map<String, String> payloadFromData =
+    message.data.map((key, value) => MapEntry(key, value?.toString() ?? "NO DATA!"));
+    print("HHHHH==> FROM: $from, My Payload From Data: $payloadFromData");
+
     await AwesomeNotifications().createNotification(
       content: NotificationContent(
         id: 1,
@@ -136,32 +149,34 @@ class _HomePageState extends State<HomePage> {
         body: message.notification?.title ?? "No Body",
         bigPicture: message.data['url'] ?? defaultImageLink,
         notificationLayout: NotificationLayout.BigPicture,
+        payload: payloadFromData,
       ),
     );
-    AwesomeNotifications().actionStream.listen((receivedNotification) {
-
-      _navigateToScreen(message);
-
-    });
   }
 
-  _navigateToScreen(RemoteMessage message) {
+  _navigateToScreen(Map<String, String>? payload) {
+    print("HHHHH==> payload: $payload");
 
-    print("HHHHH==> screen in data: ${message.data['screen']}");
-
-    if (message.data['screen'] == 'one') {
-      //Navigator.of(context).pushNamed(ScreenOne.route);
+    if (payload == null) {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const ScreenOne()),
+        MaterialPageRoute(builder: (context) => const NavigationPage()),
       );
     } else {
-      //Navigator.of(context).pushNamed(ScreenTwo.route);
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const ScreenTwo()),
-      );
-    }
 
+      if (payload['screen'] == 'one') {
+        //Navigator.of(context).pushNamed(ScreenOne.route);
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ScreenOne()),
+        );
+      } else {
+        //Navigator.of(context).pushNamed(ScreenTwo.route);
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ScreenTwo()),
+        );
+      }
+    }
   }
 }

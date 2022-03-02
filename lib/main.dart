@@ -11,8 +11,25 @@ import 'home_page.dart';
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
-  print("Handling a background message: ${message.data}");
-  AwesomeNotifications().createNotificationFromJsonData(message.data);
+  String defaultImageLink = 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Image_created_with_a_mobile_phone.png/2560px-Image_created_with_a_mobile_phone.png';
+  print("HHHHH==> Handling a background message: ${message.data}");
+  // AwesomeNotifications().createNotificationFromJsonData(message.data);
+
+  Map<String, String> payloadFromData =
+  message.data.map((key, value) => MapEntry(key, value?.toString() ?? "NO DATA!"));
+
+  AwesomeNotifications().createNotification(
+    content: NotificationContent(
+      id: 1,
+      channelKey: 'my_test_not_id',
+      title: message.notification?.title ?? "No Title",
+      body: message.notification?.title ?? "No Body",
+      bigPicture: message.data['url'] ?? defaultImageLink,
+      notificationLayout: NotificationLayout.BigPicture,
+      payload: payloadFromData,
+    ),
+  );
+
 }
 
 void main() async {
